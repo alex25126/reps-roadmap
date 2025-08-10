@@ -745,7 +745,6 @@ const Hyperspeed = ({ effectOptions }: { effectOptions: Options }) => {
 
     const container = document.getElementById('lights')!;
     const options: any = { ...effectOptions };
-    const distortions: any = { mountainDistortion: null } as any; // placeholder type fix above
     options.distortion = (function() {
       const map: any = { mountainDistortion: null } as any; // overwritten below
       return {} as any;
