@@ -23,15 +23,15 @@ export default function PlanBuilder() {
   };
 
   return (
-    <section id="plan" className="container mx-auto py-8 space-y-6">
+    <section id="plan" className="container mx-auto py-4 sm:py-8 space-y-4 sm:space-y-6 px-4">
       <header>
-        <h2 className="text-2xl font-semibold">Weekly Workout Plan</h2>
-        <p className="text-muted-foreground">Add exercises per day with sets, reps, and weights.</p>
+        <h2 className="text-xl sm:text-2xl font-semibold">Weekly Workout Plan</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">Add exercises per day with sets, reps, and weights.</p>
       </header>
 
-      <Card className="card-elevated glass p-5">
-        <form onSubmit={submit} className="grid md:grid-cols-6 gap-4">
-          <div className="md:col-span-1">
+      <Card className="card-elevated glass p-4 sm:p-5">
+        <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
+          <div className="sm:col-span-1 lg:col-span-1">
             <Label>Day</Label>
             <Select value={day} onValueChange={setDay}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -42,7 +42,7 @@ export default function PlanBuilder() {
               </SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2 lg:col-span-2">
             <Label>Exercise</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Bench Press" />
           </div>
@@ -69,27 +69,29 @@ export default function PlanBuilder() {
             <Label>Weight (kg)</Label>
             <Input type="number" value={weight ?? ""} min={0} onChange={(e) => setWeight(e.target.value === "" ? undefined : Number(e.target.value))} />
           </div>
-          <div className="md:col-span-6">
-            <Button type="submit" variant="hero">Add Exercise</Button>
+          <div className="sm:col-span-2 lg:col-span-6">
+            <Button type="submit" variant="hero" className="w-full sm:w-auto">Add Exercise</Button>
           </div>
         </form>
       </Card>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {plan.map((d) => (
-          <Card key={d.day} className="card-elevated glass p-5">
+          <Card key={d.day} className="card-elevated glass p-4 sm:p-5">
             <h3 className="font-semibold mb-3">{d.day}</h3>
             {d.exercises.length === 0 ? (
               <p className="text-sm text-muted-foreground">No exercises added.</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-2 sm:space-y-3">
                 {d.exercises.map((e) => (
-                  <li key={e.id} className="flex items-center justify-between rounded border p-3">
+                  <li key={e.id} className="flex flex-col sm:flex-row sm:items-center justify-between rounded border p-3 gap-2">
                     <div>
-                      <div className="font-medium">{e.name}</div>
+                      <div className="font-medium text-sm sm:text-base">{e.name}</div>
                       <div className="text-xs text-muted-foreground">{e.muscleGroup} • {e.sets} x {e.reps} {e.weight ? `• ${e.weight}kg` : ""}</div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => removeExercise(d.day, e.id)}>Remove</Button>
+                    <Button variant="outline" size="sm" onClick={() => removeExercise(d.day, e.id)} className="text-xs">
+                      Remove
+                    </Button>
                   </li>
                 ))}
               </ul>

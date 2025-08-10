@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/components/ui/sonner";
 
 export type MuscleGroup =
   | "Chest"
@@ -38,6 +40,97 @@ export interface ProgressLog {
 const PLAN_KEY = "gp_weekly_plan_v1";
 const LOGS_KEY = "gp_progress_logs_v1";
 
+// Get current user session
+const getCurrentUser = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user?.id || 'anonymous';
+};
+
+// Sync data with Supabase
+const syncWithDatabase = async (exercises: Exercise[], logs: ProgressLog[]) => {
+  try {
+    const userId = await getCurrentUser();
+    
+    // Sync exercises
+    for (const exercise of exercises) {
+      const { error } = await supabase
+        .from('exercises')
+        .upsert({
+          id: exercise.id,
+          name: exercise.name,
+          muscle_group: exercise.muscleGroup,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          weight: exercise.weight,
+          day: '', // Will be set when we know which day
+          user_id: userId
+        });
+      
+      if (error) console.error('Error syncing exercise:', error);
+    }
+    
+    // Sync progress logs
+    for (const log of logs) {
+      const { error } = await supabase
+        .from('progress_logs')
+        .upsert({
+          id: log.id,
+          date: log.date,
+          muscle_group: log.muscleGroup,
+          weight: log.weight,
+          reps: log.reps,
+          notes: log.notes,
+          user_id: userId
+        });
+      
+      if (error) console.error('Error syncing progress log:', error);
+    }
+  } catch (error) {
+    console.error('Database sync error:', error);
+  }
+};
+
+// Load data from Supabase
+const loadFromDatabase = async (): Promise<{ exercises: Exercise[], logs: ProgressLog[] }> => {
+  try {
+    const userId = await getCurrentUser();
+    
+    const { data: exercisesData } = await supabase
+      .from('exercises')
+      .select('*')
+      .eq('user_id', userId);
+    
+    const { data: logsData } = await supabase
+      .from('progress_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: false });
+    
+    const exercises = exercisesData?.map(e => ({
+      id: e.id,
+      name: e.name,
+      muscleGroup: e.muscle_group as MuscleGroup,
+      sets: e.sets,
+      reps: e.reps,
+      weight: e.weight
+    })) || [];
+    
+    const logs = logsData?.map(l => ({
+      id: l.id,
+      date: l.date,
+      muscleGroup: l.muscle_group as MuscleGroup,
+      weight: l.weight,
+      reps: l.reps,
+      notes: l.notes
+    })) || [];
+    
+    return { exercises, logs };
+  } catch (error) {
+    console.error('Error loading from database:', error);
+    return { exercises: [], logs: [] };
+  }
+};
+
 function safeGet<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -71,9 +164,52 @@ export function useWorkoutStore() {
   });
 
   const [logs, setLogs] = useState<ProgressLog[]>(() => safeGet<ProgressLog[]>(LOGS_KEY, []));
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+
+  // Load data from database on mount
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const { exercises, logs: dbLogs } = await loadFromDatabase();
+        
+        // Merge with local data
+        const localPlan = safeGet<WeeklyPlan>(PLAN_KEY, DAYS_LIST.map((d) => ({ day: d, exercises: [] })));
+        const localLogs = safeGet<ProgressLog[]>(LOGS_KEY, []);
+        
+        // Use database data if available, otherwise use local
+        if (dbLogs.length > 0) {
+          setLogs(dbLogs);
+        } else if (localLogs.length > 0) {
+          setLogs(localLogs);
+        }
+        
+        setLastSync(new Date());
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        toast.error('Failed to sync with database');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
 
   useEffect(() => safeSet(PLAN_KEY, plan), [plan]);
   useEffect(() => safeSet(LOGS_KEY, logs), [logs]);
+
+  // Sync with database periodically
+  useEffect(() => {
+    const syncInterval = setInterval(async () => {
+      const allExercises = plan.flatMap(p => p.exercises);
+      await syncWithDatabase(allExercises, logs);
+      setLastSync(new Date());
+    }, 30000); // Sync every 30 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [plan, logs]);
 
   const addExercise = (day: string, exercise: Omit<Exercise, "id">) => {
     const id = crypto.randomUUID();
@@ -90,10 +226,15 @@ export function useWorkoutStore() {
 
   const addProgressLog = (log: Omit<ProgressLog, "id">) => {
     const id = crypto.randomUUID();
-    setLogs((prev) => [{ ...log, id }, ...prev]);
+    const newLog = { ...log, id };
+    setLogs((prev) => [newLog, ...prev]);
+    
+    // Immediately sync this log to database
+    syncWithDatabase([], [newLog]);
+    toast.success('Progress logged successfully!');
   };
 
-  // Trigger re-computation of today at midnight automatically
+  // Auto-update current day at midnight
   const [dayTick, setDayTick] = useState(0);
   useEffect(() => {
     const schedule = () => {
@@ -102,6 +243,7 @@ export function useWorkoutStore() {
       const ms = next.getTime() - now.getTime();
       const timeout = window.setTimeout(() => {
         setDayTick((t) => t + 1);
+        toast.success('New day started! 🌅');
         schedule();
       }, ms);
       return timeout;
@@ -147,6 +289,8 @@ export function useWorkoutStore() {
     plan,
     setPlan,
     logs,
+    isLoading,
+    lastSync,
     addExercise,
     removeExercise,
     addProgressLog,

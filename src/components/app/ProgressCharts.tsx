@@ -35,14 +35,14 @@ export default function ProgressCharts() {
   })), [group, progressByGroup]);
 
   return (
-    <section className="container mx-auto py-8 space-y-6">
+    <section className="container mx-auto py-4 sm:py-8 space-y-4 sm:space-y-6 px-4">
       <header>
-        <h2 className="text-2xl font-semibold">Progress Tracking</h2>
-        <p className="text-muted-foreground">Log your lifts and see trends for each muscle group.</p>
+        <h2 className="text-xl sm:text-2xl font-semibold">Progress Tracking</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">Log your lifts and see trends for each muscle group.</p>
       </header>
 
-      <Card className="card-elevated glass p-5">
-        <form onSubmit={submit} className="grid md:grid-cols-6 gap-4">
+      <Card className="card-elevated glass p-4 sm:p-5">
+        <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
           <div>
             <Label>Date</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -66,21 +66,21 @@ export default function ProgressCharts() {
             <Label>Reps</Label>
             <Input type="number" value={reps ?? ""} onChange={(e) => setReps(e.target.value === "" ? undefined : Number(e.target.value))} />
           </div>
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2 lg:col-span-2">
             <Label>Notes</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="How did it feel? Any PRs?" />
           </div>
-          <div className="md:col-span-6">
-            <Button type="submit" variant="hero">Add Log</Button>
+          <div className="sm:col-span-2 lg:col-span-6">
+            <Button type="submit" variant="hero" className="w-full sm:w-auto">Add Log</Button>
           </div>
         </form>
       </Card>
 
-      <Card className="card-elevated glass p-5">
+      <Card className="card-elevated glass p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold">Trend • {group}</h3>
+          <h3 className="text-lg sm:text-xl font-semibold">Trend • {group}</h3>
         </div>
-        <div className="h-64">
+        <div className="h-48 sm:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />

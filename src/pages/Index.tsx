@@ -12,8 +12,8 @@ const Index = () => {
         <Hyperspeed effectOptions={hyperspeedPresets.one as any} />
       </div>
       <nav className="sticky top-0 z-10 nav-glass">
-        <div className="container mx-auto flex h-14 items-center justify-between">
-          <a href="/" className="font-semibold">Gym Planner</a>
+        <div className="container mx-auto flex h-12 sm:h-14 items-center justify-between px-4">
+          <a href="/" className="font-semibold text-sm sm:text-base">Gym Planner</a>
           <div className="hidden sm:flex gap-2">
             <a href="#dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Dashboard</a>
             <a href="#plan" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Plan</a>
@@ -21,8 +21,8 @@ const Index = () => {
           </div>
         </div>
       </nav>
-      <Tabs defaultValue="dashboard" className="container mx-auto py-6">
-        <TabsList className="glass">
+      <Tabs defaultValue="dashboard" className="container mx-auto py-4 sm:py-6 px-4">
+        <TabsList className="glass w-full sm:w-auto grid grid-cols-3 sm:flex">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="plan">Plan</TabsTrigger>
           <TabsTrigger value="progress">Progress</TabsTrigger>
